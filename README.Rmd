@@ -1,0 +1,267 @@
+---
+title: "EssentialJSONSerializer (R package)"
+author: "Jellen Vermeir"
+date: "March 20, 2019"
+output: rmarkdown::github_document
+---
+
+The intention of the package fuctionality is to (de)serialize language specific complex objects towards generic 
+JSON-datatype objects. The JSON conversion allows for flexible cross language communication when the package is implemented
+across different languages. This package provides an R implementation of the (de)serialization functionality.
+
+the package can be installed from github by using the ```devtools``` utility:
+
+```{r eval=FALSE}
+# install.packages("devtools") # if devtools currently not installed
+devtools::install_github("VermeirJellen/essentialjsonserializer_r")
+```
+
+## JSON (de)serialization of complex R-objects.
+
+Currently, 6 generic complex JSON-datatypes are provided. Corresponding R-mappings are defined as follows:
+
+* JSON **datetime**         - maps to R ```POSIXct``` objects
+* JSON **timeseries**       - maps to R 1-dimensional ```xts``` objects
+* JSON **timeseries_n_dim** - maps to R n-dimensional ```xts``` objects (n > 1)
+* JSON **series**           - maps to R 1-dimensional ```dataframe``` objects
+* JSON **dataframe**        - maps to R n-dimensional ```dataframe``` objects (n > 1)
+* JSON **matrix**           - maps to R ```matrix``` objects
+
+
+The package provides the user with the ```EssentialJSONSerializer``` reference class. Following functions
+are provided:
+
+* ```RToList```: Convert complex R structures to a generic datatype list structure.
+* ```RToJSON```: Convert complex R structures to a generic datatype JSON structure.
+* ```RFromList```: Convert generic datatype list structure to complex R-specific objects.
+* ```RFromJSON```: Convert generic datatype JSON structure to complex R-specific objects.
+
+
+## Examples
+
+#### **EssentialJSONSerializer Object Construction**
+
+```{r message=FALSE}
+Sys.setenv(tz="UTC")
+library(essentialjsonserializer)
+essential.serializer <- EssentialJSONSerializer$new()
+```
+
+
+#### **list**
+
+Serialize:
+
+```{r}
+list.input <- list(c(1, 2, 3, 4, 5), 
+                   c(6, 7, 8), list(c(1, 2, 3)))
+list.json <- essential.serializer$RToJSON(list.input)
+cat(list.json)
+```
+  
+Deserialize:
+
+```{r}
+list.json.revert <- essential.serializer$RFromJSON(list.json)
+```
+
+
+
+#### **datetime**
+
+Serialize:
+
+```{r}
+datetime.input  <- as.POSIXct(Sys.time(), tz="UTC")
+datetime.json   <- essential.serializer$RToJSON(datetime.input)
+cat(datetime.json)
+```
+
+Deserialize:
+
+```{r}
+datetime.json.revert <- essential.serializer$RFromJSON(datetime.json)
+datetime.json.revert
+```
+
+
+
+#### **datetime (nested)**
+
+Serialize:
+
+```{r}
+datetime.nested.input <- list(input.1 = datetime.input, 
+                              input.2 = as.POSIXct(Sys.Date(), tz="UTC"))
+
+datetime.nested.json    <- essential.serializer$RToJSON(datetime.nested.input)
+cat(datetime.nested.json)
+```
+
+Deserialize:
+
+```{r}
+datetime.nested.json.revert <- essential.serializer$RFromJSON(datetime.nested.json)
+datetime.nested.json.revert
+```
+
+#### **timeseries**
+
+Serialize:
+
+```{r}
+timeseries.input  <- xts::xts(matrix(c(5, 7, 9, NA), ncol=1), 
+                              order.by = c(as.POSIXct("2017-01-01", tz="UTC"),
+                                        as.POSIXct("2017-01-02", tz="UTC"),
+                                        as.POSIXct("2017-01-03", tz="UTC"),
+                                        as.POSIXct("2017-01-04", tz="UTC")))
+names(timeseries.input) <- "name_series"
+
+timeseries.json    <- essential.serializer$RToJSON(timeseries.input)
+cat(timeseries.json)
+```
+
+Deserialize:
+
+```{r}
+timeseries.json.revert <- essential.serializer$RFromJSON(timeseries.json)
+timeseries.json.revert
+```
+
+
+#### **timeseries_n_dim**
+
+Serialize:
+
+```{r}
+timeseriesndim.input  <- xts:::xts(matrix(c(5, 7, 9, 12, 15, 19), ncol=2), 
+                             order.by = c(as.POSIXct("2017-01-01", tz="UTC"),
+                                          as.POSIXct("2017-01-02", tz="UTC"),
+                                          as.POSIXct("2017-01-03", tz="UTC")))
+names(timeseriesndim.input) <- c("name_series_1", "name_series_2")
+
+timeseriesndim.json <- essential.serializer$RToJSON(timeseriesndim.input)
+cat(timeseriesndim.json)
+```
+
+Deserialize:
+
+```{r}
+timeseriesndim.json.revert <- essential.serializer$RFromJSON(timeseriesndim.json)
+timeseriesndim.json.revert
+```
+
+#### **timeseries_n_dim (nested)**
+
+Serialize:
+
+```{r}
+timeseries.nested.input <- list(ts1 = timeseries.input, 
+                                ts2 = timeseriesndim.input)
+timeseries.nested.json <- essential.serializer$RToJSON(timeseries.nested.input)
+cat(timeseries.nested.json)
+```
+
+Deserialize:
+
+```{r}
+timeseries.nested.json.revert <- essential.serializer$RFromJSON(timeseries.nested.json)
+timeseries.nested.json.revert
+```
+
+
+#### **series**
+
+Serialize:
+
+```{r}
+series.input        <- data.frame(c(1, 2, 3, 4), 
+                                  row.names = c("one", "two", "three", "four"))
+names(series.input) <- "only_column"
+
+series.json  <- essential.serializer$RToJSON(series.input)
+cat(series.json)
+```
+
+Deserialize:
+
+```{r}
+series.json.revert <- essential.serializer$RFromJSON(series.json)
+series.json.revert
+```
+
+
+#### **dataframe**
+
+Serialize:
+
+```{r}
+dataframe.input        <- data.frame(c(1, 2, 3, 4), c(4, 5, 6, 7),
+                                     row.names = c("one", "two", "three", "four"))
+names(dataframe.input) <- c("first_col", "second_col")
+
+dataframe.json <- essential.serializer$RToJSON(dataframe.input)
+cat(dataframe.json)
+```
+
+Deserialize:
+
+```{r}
+dataframe.json.revert <- essential.serializer$RFromJSON(dataframe.json)
+dataframe.json.revert
+```
+
+
+#### **matrix**
+
+Serialize:
+```{r}
+matrix.input <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2, byrow = TRUE)
+
+matrix.json <- essential.serializer$RToJSON(matrix.input)
+cat(matrix.json)
+```
+
+Deserialize:
+
+```{r}
+matrix.json.revert <- essential.serializer$RFromJSON(matrix.json)
+matrix.json.revert
+```
+
+#### **nested structure**
+
+Serialize:
+```{r}
+r.input <- list(list.input           = list.input,
+                datetime.input       = datetime.input,
+                datetime.nested      = datetime.nested.input,
+                timeseries.input     = timeseries.input,
+                timeseriesndim.input = timeseriesndim.input,
+                series.input         = series.input,
+                dataframe.input      = dataframe.input,
+                matrix.input         = matrix.input,
+                timeseries.nested    = timeseries.nested.input)
+
+                
+r.json <- essential.serializer$RToJSON(r.input)
+cat(r.json)
+```
+
+Deserialize:
+```{r}
+r.json.revert <- essential.serializer$RFromJSON(r.json)
+r.json.revert
+```
+
+
+## Donations
+
+If you find this software useful and/or you would like to see additional extensions, feel free to donate some btc:
+
+ - BTC: 3NmxUnuK8ZqAszzFzcpBerKsy4ajQpb8mi
+ 
+## Licensing
+
+Copyright 2019 Essential Data Science Consulting ltd. ([EssentialDataScience.com](http://essentialdatascience.com "EssentialDataScience") / jellenvermeir@essentialdatascience.com).
+This software is copyrighted under the MIT license: View added [LICENSE](./LICENSE) file.

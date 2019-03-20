@@ -1,0 +1,10 @@
+Package: essentialjsonserializer
+Title: JSON (de)serialization of complex R-objects
+Version: 1.0.0
+Authors@R: person("Jellen", "Vermeir", email = "jellenvermeir@essentialdatascience.com", role = c("aut", "cre"))
+Description: The intention of the package fuctionality is to (de)serialize language specific complex objects towards generic JSON-datatype objects. The JSON conversion allows for flexible cross language communication when the package is implementedacross different languages. This package provides an R implementation of the (de)serialization functionality.
+Depends: R (>= 3.5.0)
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
